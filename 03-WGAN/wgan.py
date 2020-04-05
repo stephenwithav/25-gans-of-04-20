@@ -25,6 +25,8 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
+import math
+import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
@@ -271,11 +273,9 @@ def train(models, x_train, params):
         # log the loss and accuracy
         loss, acc = adversarial.train_on_batch(noise, real_labels)
         log = "%s [adversarial loss: %f, acc: %f]" % (log, loss, acc)
-        print(log)
         if (i + 1) % 25 == 0:
             # plot generator images on a periodic basis
-            pass
-
+            print(log)
 
     # save the model after training the generator
     # the trained generator can be reloaded
@@ -351,5 +351,53 @@ def build_and_train_models():
     train(models, x_train, params)
     return models
 
+def plot_images(generator,
+                noise_input,
+                noise_label=None,
+                noise_codes=None,
+                show=False,
+                step=0,
+                model_name="gan"):
+    """Generate fake images and plot them
+
+    For visualization purposes, generate fake images
+    then plot them in a square grid
+
+    # Arguments
+        generator (Model): The Generator Model for
+            fake images generation
+        noise_input (ndarray): Array of z-vectors
+        show (bool): Whether to show plot or not
+        step (int): Appended to filename of the save images
+        model_name (string): Model name
+
+    """
+    rows = int(math.sqrt(noise_input.shape[0]))
+    if noise_label is not None:
+        noise_input = [noise_input, noise_label]
+        if noise_codes is not None:
+            noise_input += noise_codes
+
+    images = generator.predict(noise_input)
+    plt.figure(figsize=(2.2, 2.2))
+    num_images = images.shape[0]
+    image_size = images.shape[1]
+    for i in range(num_images):
+        plt.subplot(rows, rows, i + 1)
+        image = np.reshape(images[i], [image_size, image_size])
+        plt.imshow(image, cmap='gray')
+        plt.axis('off')
+    if show:
+        plt.show()
+    else:
+        plt.close('all')
+
+
+def test_generator(generator):
+    noise_input = np.random.uniform(-1.0, 1.0, size=[16, 100])
+    plot_images(generator,
+                noise_input=noise_input,
+                show=True,
+                model_name="test_outputs")
 
 (g, d, a) = build_and_train_models()
