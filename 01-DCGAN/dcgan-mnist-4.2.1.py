@@ -70,7 +70,6 @@ generator = keras.Sequential(
         layers.BatchNormalization(),
         layers.LeakyReLU(alpha=0.2),
         layers.Conv2DTranspose(1, (5, 5), strides=(1, 1), padding="same"),
-        layers.Activation("sigmoid"),
     ],
     name="generator",
 )
@@ -142,6 +141,7 @@ all_digits = all_digits.astype("float32") / 255.0
 all_digits = np.reshape(all_digits, (-1, 28, 28, 1))
 dataset = tf.data.Dataset.from_tensor_slices(all_digits)
 dataset = dataset.shuffle(buffer_size=1024).batch(batch_size)
+callback = tf.keras.callbacks.EarlyStopping(monitor="g_loss", patience=3)
 
 gan = GAN(discriminator=discriminator, generator=generator, latent_dim=latent_dim)
 gan.compile(
@@ -150,7 +150,7 @@ gan.compile(
     loss_fn=keras.losses.BinaryCrossentropy(from_logits=True),
 )
 
-gan.fit(dataset, epochs=50)
+gan.fit(dataset, epochs=50, callbacks=[callback])
 
 import matplotlib.pyplot as plt
 from keras.preprocessing import image
